@@ -13,7 +13,8 @@
 **resources**
 
 * non-technical information on [fdrtd.com](https://fdrtd.com)
-* technical documentation on [fdrtd.github.io/docs](https://fdrtd.github.io/docs/)
+* technical documentation on [fdrtd.github.io/docs](https://fdrtd.github.io/docs)
+* interactive API reference on [fdrtd.github.io/api](https://fdrtd.github.io/api)
 * free and open source code on [github.com/fdrtd](https://github.com/fdrtd)
 
 **support**
