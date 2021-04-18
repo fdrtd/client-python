@@ -10,17 +10,17 @@ class HighLevelSyncApi(Api):
     def join_barrier(self, parties, party, additional_tokens=None):
         sync_id = super().post_sync('control-flow', 'barrier', parameters={
             'tokens': HighLevelSyncApi.concat_nullable_arrays(self.tokens, additional_tokens)})
-        states = {party: False for party in parties}
+        states = {str(party): False for party in parties}
         super().put_sync(sync_id, states)
         while not all(states.values()):
-            super().patch_sync(sync_id, {party: True})
+            super().patch_sync(sync_id, {str(party): True})
             states = super().get_sync(sync_id)
         return None
 
     def clear_barrier(self, additional_tokens=None):
         sync_id = super().post_sync('control-flow', 'barrier', parameters={
             'tokens': HighLevelSyncApi.concat_nullable_arrays(self.tokens, additional_tokens)})
-        super().delete_sync(sync_id)
+        return super().delete_sync(sync_id)
 
     def send_broadcast(self, content, additional_tokens=None):
         sync_id = super().post_sync('control-flow', 'broadcast', parameters={
