@@ -27,11 +27,17 @@ class Api(LowLevelApi):
     def create_data(self, family, microservice, parameters):
         return super().post('/data', family, microservice, body=parameters)
 
-    def transform_data(self, data_id, family, microservice, parameters):
-        return super().post('/data', data_id, family, microservice, body=parameters)
-
     def delete_data(self, data_id):
         return super().delete('/data', data_id)
+
+    def create_script(self, family, microservice, parameters=None):
+        return super().post('/scripts', family, microservice, body=parameters)
+
+    def execute_script(self, script_id, parameters=None):
+        return super().patch('/scripts', script_id, body=parameters)
+
+    def delete_script(self, script_id):
+        return super().delete('/scripts', script_id)
 
     def create_task(self, family, microservice, network_id, parameters=None):
         return super().post('/tasks', family, microservice, network_id, body=parameters)

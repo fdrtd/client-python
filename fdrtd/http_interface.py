@@ -1,6 +1,59 @@
-import json as _json
 import requests as _requests
 import urllib3 as _urllib3
+import datetime as _datetime
+import logging as _logging
+
+
+def _human_readable(status):
+    return {
+        100: 'Continue',
+        101: 'Switching Protocols',
+        200: 'OK',
+        201: 'Created',
+        202: 'Accepted',
+        203: 'Non-Authoritative Information',
+        204: 'No Content',
+        205: 'Reset Content',
+        206: 'Partial Content',
+        300: 'Multiple Choices',
+        301: 'Moved Permanently',
+        302: 'Found',
+        303: 'See Other',
+        304: 'Not Modified',
+        305: 'Use Proxy',
+        307: 'Temporary Redirect',
+        400: 'Bad Request',
+        401: 'Unauthorized',
+        402: 'Payment Required',
+        403: 'Forbidden',
+        404: 'Not Found',
+        405: 'Method Not Allowed',
+        406: 'Not Acceptable',
+        407: 'Proxy Authentication Required',
+        408: 'Request Timeout',
+        409: 'Conflict',
+        410: 'Gone',
+        411: 'Length Required',
+        412: 'Precondition Failed',
+        413: 'Payload Too Large',
+        414: 'URI Too Long',
+        415: 'Unsupported Media Type',
+        416: 'Range Not Satisfiable',
+        417: 'Expectation Failed',
+        426: 'Upgrade Required',
+        500: 'Internal Server Error',
+        501: 'Not Implemented',
+        502: 'Bad Gateway',
+        503: 'Service Unavailable',
+        504: 'Gateway Timeout',
+        505: 'HTTP Version Not Supported'
+    }.get(status, 'n/a')
+
+
+def _WDlogfile960323_line(method="-", uri="-", status="-", comment="-"):
+    date = _datetime.date.today().strftime("%Y-%m-%d")
+    time = _datetime.datetime.now().strftime("%H:%M:%S")
+    return f'{date}\t{time}\t{method}\t{uri}\t{status}\t{_human_readable(status)}\t{comment}'
 
 
 class HttpInterface:
@@ -17,65 +70,36 @@ class HttpInterface:
 
     @staticmethod
     def post(url, body):
-        return HttpInterface._call(_requests.post, url, body)
+        return HttpInterface._call(_requests.post, url, body, method="POST")
 
     @staticmethod
     def put(url, body):
-        return HttpInterface._call(_requests.put, url, body)
+        return HttpInterface._call(_requests.put, url, body, method="PUT")
 
     @staticmethod
     def patch(url, body):
-        return HttpInterface._call(_requests.patch, url, body)
+        return HttpInterface._call(_requests.patch, url, body, method="PATCH")
 
     @staticmethod
     def get(url):
-        return HttpInterface._call(_requests.get, url)
+        return HttpInterface._call(_requests.get, url, method="GET")
 
     @staticmethod
     def delete(url):
-        return HttpInterface._call(_requests.delete, url)
+        return HttpInterface._call(_requests.delete, url, method="DELETE")
 
     @staticmethod
-    def _call(hook, url, body=None):
+    def _call(hook, url, body=None, method="-"):
 
-        if body is None:
-            response = hook(url=url, verify=HttpInterface.ssl_verify)
-        else:
-            response = hook(url=url, json=body, verify=HttpInterface.ssl_verify)
+        _logging.getLogger(__name__).debug(f'Sending request: {method} {url} {body}')
+        response = hook(url=url, json=body, verify=HttpInterface.ssl_verify)
+        _logging.getLogger(__name__).debug(f'Receiving response: {response.status_code} {response.text}')
 
-        if response.status_code == 400:
-            raise Exception("HTTP error code 400 (bad request): {}".format(url))
-        if response.status_code == 403:
-            raise Exception("HTTP error code 403 (forbidden): {}".format(url))
-        if response.status_code == 404:
-            raise Exception("HTTP error code 404 (not found): {}".format(url))
-        if response.status_code == 405:
-            raise Exception("HTTP error code 405 (not allowed): {}".format(url))
-        if response.status_code == 500:
-            raise Exception("HTTP error code 500 (server error): {} {}".format(url, response.text))
-        if response.status_code == 501:
-            raise Exception("HTTP error code 501 (not implemented): {}".format(url))
-        if response.status_code == 502:
-            raise Exception("HTTP error code 502 (bad gateway): {}".format(url))
-        if response.status_code != 200 and response.status_code != 201 and response.status_code != 202 and response.status_code != 204:
-            raise Exception("HTTP status code {}: {}".format(response.status_code, url))
-        if response.status_code == 202:
-            return {}
-        if response.status_code == 204:
-            return {}
+        if response.status_code not in [200, 201, 202, 204]:
+            message = _WDlogfile960323_line(method, url, response.status_code, response.text)
+            _logging.getLogger(__name__).error(message)
+            raise Exception(message)
 
-        try:
-            ret = response.json()
-        except:
-            return None
-
-        if isinstance(ret, str):
-            if ret == '':
-                return None
-            if ret[0] == '{':
-                return _json.loads(ret)
-            if ret[0] == '\"':
-                return ret[1:-1]
-            if ret[0] == '\'':
-                return ret[1:-1]
-        return ret
+        message = _WDlogfile960323_line(method, url, response.status_code)
+        _logging.getLogger(__name__).info(message)
+        return None if response.text == '' else response.json()
